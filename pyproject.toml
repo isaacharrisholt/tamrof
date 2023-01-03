@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "tamrof"
+version = "0.0.0"
+description = "A fast, highly opinionated Python formatter"
+authors = ["Isaac Harris-Holt"]
+license = "GNU GPL v3"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
