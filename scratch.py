@@ -3,7 +3,7 @@ import tokenize
 from pathlib import Path
 from typing import Any, List
 
-from tamrof import parse, Line
+from tamrof import parse, Line, TokenType, Token
 
 
 def handle_op(tkn: tokenize.TokenInfo):
@@ -49,7 +49,7 @@ def main():
     import ast
     a = ast.parse(filepath.read_text())
 
-    lines = []
+    lines: List[Line] = []
 
     for node in ast.walk(a):
         if not isinstance(node, ast.FunctionDef):
@@ -60,9 +60,9 @@ def main():
 
         # Construct a line for the function definition
         tokens = [
-            'def',
-            node.name,
-            '(',
+            TokenType.DEF.value,
+            Token(node.name),
+            TokenType.OPEN_PAREN.value,
         ]
 
         defaults: List[Any] = (
@@ -86,45 +86,49 @@ def main():
         print(args_with_defaults)
 
         for poa in node.args.posonlyargs:
-            tokens.append(poa.arg)
-            tokens.append(',')
+            tokens.append(Token(poa.arg))
+            tokens.append(TokenType.COMMA.value)
 
         if node.args.posonlyargs:
-            tokens.append('/')
-            tokens.append(',')
+            tokens.append(TokenType.F_SLASH.value.without_spaces())
+            tokens.append(TokenType.COMMA.value)
 
         for arg, default in args_with_defaults:
-            tokens.append(arg.arg)
+            tokens.append(Token(arg.arg))
             if default:
-                tokens.append('=')
-                tokens.append(repr(default.value))
-            tokens.append(',')
+                tokens.append(TokenType.EQUALS.value.without_spaces())
+                tokens.append(Token(repr(default.value)))
+            tokens.append(TokenType.COMMA.value)
 
         if node.args.vararg:
-            tokens.append('*')
-            tokens.append(node.args.vararg.arg)
-            tokens.append(',')
+            tokens.append(TokenType.STAR.value.without_spaces())
+            tokens.append(Token(node.args.vararg.arg))
+            tokens.append(TokenType.COMMA.value)
         elif node.args.kwonlyargs:
-            tokens.append('*')
-            tokens.append(',')
+            tokens.append(TokenType.STAR.value.without_spaces())
+            tokens.append(TokenType.COMMA.value)
 
         for arg, default in kwonlyargs_with_defaults:
-            tokens.append(arg.arg)
+            tokens.append(Token(arg.arg))
             if default:
-                tokens.append('=')
-                tokens.append(repr(default.value))
-            tokens.append(',')
+                tokens.append(TokenType.EQUALS.value.without_spaces())
+                tokens.append(Token(repr(default.value)))
+            tokens.append(TokenType.COMMA.value)
 
         if node.args.kwarg:
-            tokens.append('**')
-            tokens.append(node.args.kwarg.arg)
-            tokens.append(',')
+            tokens.append(TokenType.DOUBLE_STAR.value)
+            tokens.append(Token(node.args.kwarg.arg))
+            tokens.append(TokenType.COMMA.value)
 
-        while tokens[-1] in (',', '/', '*'):
+        while tokens[-1] in (
+            TokenType.COMMA.value,
+            TokenType.F_SLASH.value,
+            TokenType.STAR.value,
+        ):
             tokens.pop()
 
-        tokens.append(')')
-        tokens.append(':')
+        tokens.append(TokenType.CLOSE_PAREN.value)
+        tokens.append(TokenType.COLON.value)
 
         lines.append(Line(tokens, 0))
 
@@ -134,7 +138,7 @@ def main():
     print()
 
     for line in lines:
-        print(''.join(line.tokens))
+        print(line)
 
 
 

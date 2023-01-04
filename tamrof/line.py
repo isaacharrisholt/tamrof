@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
+from tamrof.token import Token
+
 
 @dataclass
 class Line:
@@ -25,8 +27,8 @@ class Line:
     The latter is represented as a single Line because it could be written as a
     single line: `a = (1, 2)`.
     """
-    tokens: List[str]
+    tokens: List[Token]
     indent: int
 
     def __str__(self):
-        return ''.join(self.tokens)
+        return ''.join(str(token) for token in self.tokens)

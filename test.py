@@ -47,6 +47,7 @@ def test_with_kwonlyargs(a, b=2, *, c=3, d=4):
 
 
 test()
+test_with_args_and_kwargs_and_posonlyargs_and_varargs(1, 2, 3, 4, 5, 6, 7, 8, 9)
 
 
 for i in range(10):
