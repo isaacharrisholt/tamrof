@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from tamrof.token import Token
+from tamrof.tokens import Token
 
 
 @dataclass

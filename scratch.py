@@ -3,7 +3,7 @@ import tokenize
 from pathlib import Path
 from typing import Any, List
 
-from tamrof import parse, Line, TokenType, Token
+from tamrof import parse, Line, tokens, Token
 
 
 def handle_op(tkn: tokenize.TokenInfo):
@@ -59,10 +59,10 @@ def main():
         print(ast.dump(node))
 
         # Construct a line for the function definition
-        tokens = [
-            TokenType.DEF.value,
+        token_list = [
+            tokens.DEF,
             Token(node.name),
-            TokenType.OPEN_PAREN.value,
+            tokens.OPEN_PAREN,
         ]
 
         defaults: List[Any] = (
@@ -86,51 +86,51 @@ def main():
         print(args_with_defaults)
 
         for poa in node.args.posonlyargs:
-            tokens.append(Token(poa.arg))
-            tokens.append(TokenType.COMMA.value)
+            token_list.append(Token(poa.arg))
+            token_list.append(tokens.COMMA)
 
         if node.args.posonlyargs:
-            tokens.append(TokenType.F_SLASH.value.without_spaces())
-            tokens.append(TokenType.COMMA.value)
+            token_list.append(tokens.F_SLASH.without_spaces())
+            token_list.append(tokens.COMMA)
 
         for arg, default in args_with_defaults:
-            tokens.append(Token(arg.arg))
+            token_list.append(Token(arg.arg))
             if default:
-                tokens.append(TokenType.EQUALS.value.without_spaces())
-                tokens.append(Token(repr(default.value)))
-            tokens.append(TokenType.COMMA.value)
+                token_list.append(tokens.EQUALS.without_spaces())
+                token_list.append(Token(repr(default.value)))
+            token_list.append(tokens.COMMA)
 
         if node.args.vararg:
-            tokens.append(TokenType.STAR.value.without_spaces())
-            tokens.append(Token(node.args.vararg.arg))
-            tokens.append(TokenType.COMMA.value)
+            token_list.append(tokens.STAR.without_spaces())
+            token_list.append(Token(node.args.vararg.arg))
+            token_list.append(tokens.COMMA)
         elif node.args.kwonlyargs:
-            tokens.append(TokenType.STAR.value.without_spaces())
-            tokens.append(TokenType.COMMA.value)
+            token_list.append(tokens.STAR.without_spaces())
+            token_list.append(tokens.COMMA)
 
         for arg, default in kwonlyargs_with_defaults:
-            tokens.append(Token(arg.arg))
+            token_list.append(Token(arg.arg))
             if default:
-                tokens.append(TokenType.EQUALS.value.without_spaces())
-                tokens.append(Token(repr(default.value)))
-            tokens.append(TokenType.COMMA.value)
+                token_list.append(tokens.EQUALS.without_spaces())
+                token_list.append(Token(repr(default.value)))
+            token_list.append(tokens.COMMA)
 
         if node.args.kwarg:
-            tokens.append(TokenType.DOUBLE_STAR.value)
-            tokens.append(Token(node.args.kwarg.arg))
-            tokens.append(TokenType.COMMA.value)
+            token_list.append(tokens.DOUBLE_STAR)
+            token_list.append(Token(node.args.kwarg.arg))
+            token_list.append(tokens.COMMA)
 
-        while tokens[-1] in (
-            TokenType.COMMA.value,
-            TokenType.F_SLASH.value,
-            TokenType.STAR.value,
+        while token_list[-1] in (
+            tokens.COMMA,
+            tokens.F_SLASH,
+            tokens.STAR,
         ):
-            tokens.pop()
+            token_list.pop()
 
-        tokens.append(TokenType.CLOSE_PAREN.value)
-        tokens.append(TokenType.COLON.value)
+        token_list.append(tokens.CLOSE_PAREN)
+        token_list.append(tokens.COLON)
 
-        lines.append(Line(tokens, 0))
+        lines.append(Line(token_list, 0))
 
         print()
 

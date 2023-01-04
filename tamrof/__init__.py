@@ -1,5 +1,4 @@
-from .parse import parse
-
+from . import tokens
 from .line import Line
-
-from .token import Token, TokenType
+from .parse import parse
+from .tokens import Token

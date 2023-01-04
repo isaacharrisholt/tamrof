@@ -37,16 +37,15 @@ class Token:
         return self
 
 
-class TokenType(Enum):
-    """A token type is a type of token."""
-    DEF = Token('def', spaces_after=1)
-    COLON = Token(':', spaces_after=1)
-    COMMA = Token(',', spaces_after=1)
-    EQUALS = Token('=', spaces_before=1, spaces_after=1)
-    STAR = Token('*', spaces_before=1, spaces_after=1)
-    DOUBLE_STAR = Token('**')
-    OPEN_PAREN = Token('(')
-    CLOSE_PAREN = Token(')')
-    F_SLASH = Token('/', spaces_before=1, spaces_after=1)
+# Token definitions
+DEF = Token('def', spaces_after=1)
+COLON = Token(':', spaces_after=1)
+COMMA = Token(',', spaces_after=1)
+EQUALS = Token('=', spaces_before=1, spaces_after=1)
+STAR = Token('*', spaces_before=1, spaces_after=1)
+DOUBLE_STAR = Token('**')
+OPEN_PAREN = Token('(')
+CLOSE_PAREN = Token(')')
+F_SLASH = Token('/', spaces_before=1, spaces_after=1)
 
 
