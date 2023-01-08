@@ -1,13 +1,11 @@
 import ast
 import warnings
+from dataclasses import dataclass, field
 from typing import Any, List, Optional, Type, Union
 
-from tamrof import constants, tokens
-from tamrof.tokens import Token
-from tamrof.types import TamrofNode, BreakableNode, Line, _B
+from tamrof import constants
 from tamrof.nodes.expressions import Constant, Name
-
-from dataclasses import dataclass, field
+from tamrof.types import BreakableNode, Line, TamrofNode, _B
 
 
 @dataclass
@@ -23,7 +21,7 @@ class FunctionName(TamrofNode):
         cls: Type['FunctionName'],
         node: ast.FunctionDef,
     ) -> 'FunctionName':
-        return cls(node.name)
+        return cls(name=node.name)
 
 
 @dataclass
@@ -70,7 +68,12 @@ class FunctionArg(BreakableNode):
     ) -> 'FunctionArg':
         annotation = generate_annotation(node)
         default = generate_default(default)
-        return cls(node.arg, annotation, default, prefix)
+        return cls(
+            name=node.arg,
+            annotation=annotation,
+            default=default,
+            prefix=prefix,
+        )
 
     def _get_default_lines(self) -> List[Line]:
         content = [self.annotation, self.default]
@@ -141,7 +144,7 @@ class FunctionArgs(BreakableNode):
         if node.args.kwarg:
             args.append(FunctionArg.from_ast(node.args.kwarg, prefix='**'))
 
-        return cls(args)
+        return cls(args=args)
 
     def _get_default_lines(self) -> List[Line]:
         return [Line(content=self.args, indent=self.indent)]
