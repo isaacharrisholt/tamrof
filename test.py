@@ -6,17 +6,15 @@ def test():
     print("test")
 
 
-def test_with_json():
-    print(
-        json.dumps(
-            [
-                {"a": 1, "b": 2},
-                {"a": 1, "b": 2},
-                {"a": 1, "b": 2},
-                {"a": 1, "b": 2},
-                {"a": 1, "b": 2},
-            ],
-        ),
+def test_with_json() -> str:
+    return json.dumps(
+        [
+            {"a": 1, "b": 2},
+            {"a": 1, "b": 2},
+            {"a": 1, "b": 2},
+            {"a": 1, "b": 2},
+            {"a": 1, "b": 2},
+        ],
     )
 
 
