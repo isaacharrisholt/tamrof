@@ -68,15 +68,33 @@ def test_with_long_annotation(
     *,
     c: str = '3',
     d: 'float' = 4.0
-) -> None:
+) -> str:
     print(a, b, c, d)
     print(a, b, c, d)
     print(a, b, c, d)
+    return 'foo'
+
+
+def test_function_with_closure():
+    a = 1
+
+    def inner():
+        print(a)
+
+    return inner
 
 
 class Test:
     def test_self_annotation(self: 'Test'):
         print(self)
+
+    def test_method_with_closure(self):
+        a = 1
+
+        def inner():
+            print(a)
+
+        return inner
 
 
 test()

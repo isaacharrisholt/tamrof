@@ -1,1 +1,2 @@
-LINE_LENGTH: int = 80
+MAX_LINE_LENGTH: int = 80
+INDENT_SIZE: int = 4

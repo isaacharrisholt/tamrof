@@ -1,10 +1,10 @@
 import ast
+import warnings
 from typing import Any, List, Optional, Type, Union
 
 from tamrof import constants, tokens
-from tamrof.line import Line
 from tamrof.tokens import Token
-from tamrof.types import TamrofNode
+from tamrof.types import TamrofNode, BreakableNode, Line, _B
 from tamrof.nodes.expressions import Constant, Name
 
 from dataclasses import dataclass, field
@@ -13,8 +13,6 @@ from dataclasses import dataclass, field
 @dataclass
 class FunctionName(TamrofNode):
     """A function name."""
-    __BREAKABLE = False
-
     name: str
 
     def __str__(self):
@@ -29,15 +27,14 @@ class FunctionName(TamrofNode):
 
 
 @dataclass
-class FunctionEnd(TamrofNode):
+class FunctionEnd(BreakableNode):
     """A function end."""
-    __BREAKABLE = True
-
-    annotation: str = ''
+    annotation: Optional[TamrofNode] = None
 
     def __str__(self):
         if self.annotation:
             return f') -> {self.annotation}:'
+
         return '):'
 
     @classmethod
@@ -47,28 +44,22 @@ class FunctionEnd(TamrofNode):
     ) -> 'FunctionEnd':
         return cls(annotation=generate_annotation(node))
 
+    def _get_default_lines(self) -> List[Line]:
+        return [
+            Line(content=[Constant(value=self.annotation)], indent=self.indent),
+        ]
+
+    def break_node(self: _B) -> _B:
+        raise NotImplementedError
+
 
 @dataclass
-class FunctionArg(TamrofNode):
+class FunctionArg(BreakableNode):
     """A function argument."""
-    __BREAKABLE = True
-
     name: str
-    annotation: str = ''
-    default: TamrofNode = None
+    annotation: Optional[TamrofNode] = None
+    default: Optional[TamrofNode] = None
     prefix: str = ''
-
-    def __str__(self) -> str:
-        result = self.prefix + self.name
-
-        if self.annotation and self.default:
-            result += f': {self.annotation} = {self.default}'
-        elif self.annotation:
-            result += f': {self.annotation}'
-        elif self.default:
-            result += f'={self.default}'
-
-        return result
 
     @classmethod
     def from_ast(
@@ -81,16 +72,30 @@ class FunctionArg(TamrofNode):
         default = generate_default(default)
         return cls(node.arg, annotation, default, prefix)
 
+    def _get_default_lines(self) -> List[Line]:
+        content = [self.annotation, self.default]
+        return [Line(content=content, indent=self.indent)]
+
+    def to_string(self, prev: str = '') -> str:
+        result = self.prefix + self.name
+
+        if self.annotation and self.default:
+            result += f': {self.annotation} = {self.default}'
+        elif self.annotation:
+            result += f': {self.annotation}'
+        elif self.default:
+            result += f'={self.default}'
+
+        return result
+
+    def break_node(self: _B) -> _B:
+        raise NotImplementedError
+
 
 @dataclass
-class FunctionArgs(TamrofNode):
+class FunctionArgs(BreakableNode):
     """A function's arguments."""
-    __BREAKABLE = True
-
     args: List[FunctionArg] = field(default_factory=list)
-
-    def __str__(self):
-        return ', '.join(str(arg) for arg in self.args)
 
     @classmethod
     def from_ast(
@@ -138,60 +143,101 @@ class FunctionArgs(TamrofNode):
 
         return cls(args)
 
+    def _get_default_lines(self) -> List[Line]:
+        return [Line(content=self.args, indent=self.indent)]
+
+    def to_string(self, prev: str = '') -> str:
+        if len(self.lines) <= 1:
+            return ', '.join(str(arg) for arg in self.args)
+
+        return ',\n'.join(str(line) for line in self.lines) + ','
+
+    def break_node(self: 'FunctionArgs') -> 'FunctionArgs':
+        curr_indent = self.lines[0].indent
+        new_indent = curr_indent + constants.INDENT_SIZE
+        if new_indent > 10:
+            warnings.warn('Indentation is too deep')
+            return self
+        return FunctionArgs(
+            args=self.args,
+            lines=[
+                Line(content=[arg], indent=new_indent)
+                for arg in self.args
+            ]
+        )
+
 
 @dataclass
-class FunctionDef(TamrofNode):
+class FunctionDef(BreakableNode):
     """A node for a function definition."""
-    __BREAKABLE = True
-
-    name: str
+    name: FunctionName
+    args: FunctionArgs
+    end: FunctionEnd
     indent: int = 0
-    content: List[TamrofNode] = field(default_factory=list)
-
-    def __str__(self) -> str:
-        string_rep = ''.join(str(c) for c in self.content)
-        return string_rep
+    is_method: bool = False
 
     @classmethod
     def from_ast(
         cls: Type['FunctionDef'],
         node: ast.FunctionDef,
+        is_method: bool = False,
     ) -> 'FunctionDef':
-        # Construct a line for the function definition
-        content = [
-            FunctionName.from_ast(node),
-            FunctionArgs.from_ast(node),
-            FunctionEnd.from_ast(node),
-        ]
-
         return cls(
-            name=node.name,
-            content=content,
+            name=FunctionName.from_ast(node),
+            args=FunctionArgs.from_ast(node),
+            end=FunctionEnd.from_ast(node),
             indent=node.col_offset,
+            is_method=is_method,
         )
 
+    def _get_default_lines(self) -> List[Line]:
+        return [
+            Line(content=[self.name, self.args, self.end], indent=self.indent),
+        ]
 
-def generate_annotation(obj: Union[ast.arg, ast.FunctionDef]) -> str:
+    def break_node(self: 'FunctionDef') -> 'FunctionDef':
+        new_args = self.args.break_node()
+        return FunctionDef(
+            name=self.name,
+            args=new_args,
+            end=self.end,
+            indent=self.indent,
+            is_method=self.is_method,
+            lines=[
+                Line(content=[self.name], indent=self.indent),
+                Line(content=[new_args], indent=self.indent),
+                Line(content=[self.end], indent=self.indent),
+            ],
+        )
+
+    def to_string(self, prev: str = '') -> str:
+        string_rep = self._get_string_rep()
+        if len(self.lines) <= 1:
+            if len(string_rep) > constants.MAX_LINE_LENGTH:
+                return self.break_node().to_string(prev=prev)
+
+        return string_rep
+
+
+def generate_annotation(
+    obj: Union[ast.arg, ast.FunctionDef],
+) -> Optional[TamrofNode]:
     """Handle an argument annotation."""
     if isinstance(obj, ast.FunctionDef):
         annotation = obj.returns
     else:
         annotation = obj.annotation
 
-    result = ''
-
     if not annotation:
-        return result
+        return None
     elif isinstance(annotation, ast.Name):
-        result += annotation.id
+        return Name.from_ast(annotation)
     elif isinstance(annotation, ast.Constant):
-        result += repr(annotation.value)
+        return Constant.from_ast(annotation)
     elif isinstance(annotation, ast.Subscript):
         raise NotImplementedError
     else:
         raise ValueError(f'Unknown annotation: {ast.dump(annotation)}')
-
-    return result
 
 
 def generate_default(obj: Optional[ast.Expr]) -> Optional[TamrofNode]:
