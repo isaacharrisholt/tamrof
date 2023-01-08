@@ -1,0 +1,1 @@
+LINE_LENGTH: int = 80

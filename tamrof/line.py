@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 
-from tamrof.tokens import Token
+from tamrof.tokens import Token, BREAK_POINT, NEWLINE, INDENT, COMMA
+from tamrof import constants
 
 
 @dataclass
@@ -26,9 +27,16 @@ class Line:
 
     The latter is represented as a single Line because it could be written as a
     single line: `a = (1, 2)`.
+
+    Lines may contain sub-lines, which are then used when breaking a line into
+    multiple lines.
     """
-    tokens: List[Token]
+    content: List[Union[Token, 'Line']]
     indent: int
 
     def __str__(self):
-        return ''.join(str(token) for token in self.tokens)
+        content_with_indent = (
+            ([INDENT] * self.indent) +
+            self.content
+        )
+        return ''.join(str(c) for c in content_with_indent)

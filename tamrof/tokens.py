@@ -2,7 +2,7 @@ from enum import Enum
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Token:
     """A token is a single unit of code.
 
@@ -32,9 +32,24 @@ class Token:
         return self.value == other.value
 
     def without_spaces(self) -> 'Token':
-        self.use_spaces_before = False
-        self.use_spaces_after = False
-        return self
+        """Return a copy of this token without spaces before or after."""
+        return Token(
+            self.value,
+            spaces_before=0,
+            spaces_after=0,
+            use_spaces_before=False,
+            use_spaces_after=False,
+        )
+
+    def with_no_space_after(self) -> 'Token':
+        """Return a copy of this token without a space after."""
+        return Token(
+            self.value,
+            spaces_before=self.spaces_before,
+            spaces_after=self.spaces_after,
+            use_spaces_before=self.use_spaces_before,
+            use_spaces_after=False,
+        )
 
 
 # Token definitions
@@ -47,5 +62,9 @@ DOUBLE_STAR = Token('**')
 OPEN_PAREN = Token('(')
 CLOSE_PAREN = Token(')')
 F_SLASH = Token('/', spaces_before=1, spaces_after=1)
+RIGHT_ARROW = Token('->', spaces_before=1, spaces_after=1)
+INDENT = Token('    ')
+NEWLINE = Token('\n')
 
-
+# Break points
+BREAK_POINT = Token('')
