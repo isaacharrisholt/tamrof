@@ -1,5 +1,4 @@
-from . import constants, tokens
+from . import constants
 from .parse import parse
 from .tamrof import Tamrof
-from .tokens import Token
 from .types import Line, TamrofNode, BreakableNode

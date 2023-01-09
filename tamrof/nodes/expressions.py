@@ -2,15 +2,15 @@ import ast
 
 from tamrof.types import TamrofNode
 from typing import Any, Type
-from dataclasses import dataclass
 
 
-@dataclass
 class Name(TamrofNode):
     """A node for a name."""
     __BREAKABLE = False
 
-    value: Any
+    def __init__(self, value: Any, indent: int = 0):
+        self.value = value
+        super().__init__(indent=indent)
 
     def __str__(self):
         return str(self.value)
@@ -20,12 +20,13 @@ class Name(TamrofNode):
         return cls(node.id)
 
 
-@dataclass
 class Constant(TamrofNode):
     """A node for a constant."""
     __BREAKABLE = False
 
-    value: Any
+    def __init__(self, value: Any, indent: int = 0):
+        self.value = value
+        super().__init__(indent=indent)
 
     def __str__(self):
         return repr(self.value)

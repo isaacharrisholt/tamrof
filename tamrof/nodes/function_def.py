@@ -1,6 +1,5 @@
 import ast
 import warnings
-from dataclasses import dataclass, field
 from typing import Any, List, Optional, Type, Union
 
 from tamrof import constants
@@ -8,10 +7,11 @@ from tamrof.nodes.expressions import Constant, Name
 from tamrof.types import BreakableNode, Line, TamrofNode, _B
 
 
-@dataclass
 class FunctionName(TamrofNode):
     """A function name."""
-    name: str
+    def __init__(self, name: str, indent: int = 0):
+        self.name = name
+        super().__init__(indent=indent)
 
     def __str__(self):
         return f'def {self.name}('
@@ -24,10 +24,16 @@ class FunctionName(TamrofNode):
         return cls(name=node.name)
 
 
-@dataclass
 class FunctionEnd(BreakableNode):
     """A function end."""
-    annotation: Optional[TamrofNode] = None
+    def __init__(
+        self,
+        annotation: Optional[TamrofNode],
+        indent: int = 0,
+        lines: List[Line] = None,
+    ):
+        self.annotation = annotation
+        super().__init__(indent=indent, lines=lines)
 
     def __str__(self):
         if self.annotation:
@@ -51,13 +57,22 @@ class FunctionEnd(BreakableNode):
         raise NotImplementedError
 
 
-@dataclass
 class FunctionArg(BreakableNode):
     """A function argument."""
-    name: str
-    annotation: Optional[TamrofNode] = None
-    default: Optional[TamrofNode] = None
-    prefix: str = ''
+    def __init__(
+        self,
+        name: str,
+        annotation: Optional[TamrofNode] = None,
+        default: Optional[TamrofNode] = None,
+        prefix: str = '',
+        indent: int = 0,
+        lines: List[Line] = None,
+    ):
+        self.name = name
+        self.annotation = annotation
+        self.default = default
+        self.prefix = prefix
+        super().__init__(indent=indent, lines=lines)
 
     @classmethod
     def from_ast(
@@ -95,10 +110,19 @@ class FunctionArg(BreakableNode):
         raise NotImplementedError
 
 
-@dataclass
 class FunctionArgs(BreakableNode):
     """A function's arguments."""
-    args: List[FunctionArg] = field(default_factory=list)
+    def __init__(
+        self,
+        args: List[FunctionArg] = None,
+        indent: int = 0,
+        lines: List[Line] = None,
+    ):
+        if not args:
+            args = []
+
+        self.args = args
+        super().__init__(indent=indent, lines=lines)
 
     @classmethod
     def from_ast(
@@ -170,14 +194,22 @@ class FunctionArgs(BreakableNode):
         )
 
 
-@dataclass
 class FunctionDef(BreakableNode):
     """A node for a function definition."""
-    name: FunctionName
-    args: FunctionArgs
-    end: FunctionEnd
-    indent: int = 0
-    is_method: bool = False
+    def __init__(
+        self,
+        name: FunctionName,
+        args: FunctionArgs,
+        end: FunctionEnd,
+        is_method: bool = False,
+        indent: int = 0,
+        lines: List[Line] = None,
+    ):
+        self.name = name
+        self.args = args
+        self.end = end
+        self.is_method = is_method
+        super().__init__(indent=indent, lines=lines)
 
     @classmethod
     def from_ast(

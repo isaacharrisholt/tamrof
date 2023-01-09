@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from typing import Any, List, Type, TypeVar
 
 from tamrof import constants
@@ -12,7 +11,8 @@ class TamrofNode(ABC):
     """A node in the Tamrof AST."""
     __BREAKABLE: bool = False
 
-    indent: int = 0
+    def __init__(self, indent: int = 0):
+        self.indent = indent
 
     @property
     def is_breakable(self) -> bool:
@@ -24,11 +24,14 @@ class TamrofNode(ABC):
         raise NotImplementedError
 
 
-@dataclass
 class Line:
     """A line represents a single line of code."""
-    content: List[TamrofNode] = field(default_factory=list)
-    indent: int = 0
+    def __init__(self, content: List[TamrofNode] = None, indent: int = 0):
+        if content is None:
+            content = []
+
+        self.content = content
+        self.indent = indent
 
     def __str__(self):
         content_with_indent: List[Any] = (
@@ -45,19 +48,22 @@ class Line:
         return any(node.is_breakable for node in self.content)
 
 
-@dataclass
 class BreakableNode(TamrofNode, ABC):
     """A node that can be broken."""
     __BREAKABLE = True
 
-    lines: List[Line] = field(default_factory=list, kw_only=True)
+    def __init__(self, lines: List[Line] = None, indent: int = 0):
+        # Call to super() first as _get_default_lines() may need to use
+        # self.indent
+        super().__init__(indent=indent)
+
+        if not lines:
+            self.lines = self._get_default_lines()
+        else:
+            self.lines = lines
 
     def __str__(self):
         return self.to_string()
-
-    def __post_init__(self):
-        if not self.lines:
-            self.lines = self._get_default_lines()
 
     def _get_string_rep(self) -> str:
         return '\n'.join(str(line) for line in self.lines)
